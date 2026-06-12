@@ -1,6 +1,7 @@
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors } from '../theme';
 import { HomeScreen } from '../screens/HomeScreen';
 import { ProductsScreen } from '../screens/ProductsScreen';
@@ -35,6 +36,22 @@ export type TabParamList = {
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator<TabParamList>();
 
+function SafeHomeScreen() {
+  return <SafeAreaView edges={['top']} style={{ flex: 1, backgroundColor: colors.background }}><HomeScreen /></SafeAreaView>;
+}
+
+function SafeProductsScreen() {
+  return <SafeAreaView edges={['top']} style={{ flex: 1, backgroundColor: colors.background }}><ProductsScreen /></SafeAreaView>;
+}
+
+function SafeStatsScreen() {
+  return <SafeAreaView edges={['top']} style={{ flex: 1, backgroundColor: colors.background }}><StatsScreen /></SafeAreaView>;
+}
+
+function SafeProfileScreen() {
+  return <SafeAreaView edges={['top']} style={{ flex: 1, backgroundColor: colors.background }}><ProfileScreen /></SafeAreaView>;
+}
+
 function Tabs() {
   return (
     <Tab.Navigator
@@ -47,10 +64,10 @@ function Tabs() {
         tabBarHideOnKeyboard: true,
       }}
     >
-      <Tab.Screen name="Home" component={HomeScreen} options={{ title: '首页', tabBarIcon: ({ color, size }) => <Ionicons name="home-outline" color={color} size={size} /> }} />
-      <Tab.Screen name="Products" component={ProductsScreen} options={{ title: '商品', tabBarIcon: ({ color, size }) => <Ionicons name="shirt-outline" color={color} size={size} /> }} />
-      <Tab.Screen name="Stats" component={StatsScreen} options={{ title: '统计', tabBarIcon: ({ color, size }) => <Ionicons name="bar-chart-outline" color={color} size={size} /> }} />
-      <Tab.Screen name="Profile" component={ProfileScreen} options={{ title: '我的', tabBarIcon: ({ color, size }) => <Ionicons name="person-outline" color={color} size={size} /> }} />
+      <Tab.Screen name="Home" component={SafeHomeScreen} options={{ title: '首页', tabBarIcon: ({ color, size }) => <Ionicons name="home-outline" color={color} size={size} /> }} />
+      <Tab.Screen name="Products" component={SafeProductsScreen} options={{ title: '商品', tabBarIcon: ({ color, size }) => <Ionicons name="shirt-outline" color={color} size={size} /> }} />
+      <Tab.Screen name="Stats" component={SafeStatsScreen} options={{ title: '统计', tabBarIcon: ({ color, size }) => <Ionicons name="bar-chart-outline" color={color} size={size} /> }} />
+      <Tab.Screen name="Profile" component={SafeProfileScreen} options={{ title: '我的', tabBarIcon: ({ color, size }) => <Ionicons name="person-outline" color={color} size={size} /> }} />
     </Tab.Navigator>
   );
 }
