@@ -1,45 +1,57 @@
 import { Platform } from 'react-native';
 
 export const colors = {
-  background: '#F7F9FC',
+  background: '#F6F7F6',
   card: '#FFFFFF',
-  primary: '#12325A',
-  primarySoft: '#EAF1FA',
-  text: '#172033',
-  muted: '#667085',
-  border: '#E7ECF3',
-  success: '#1F8A4C',
-  successSoft: '#E8F6EE',
-  warning: '#F59E0B',
-  warningSoft: '#FFF7E6',
-  danger: '#D92D20',
-  dangerSoft: '#FDECEC',
-  slate: '#2F3A4C',
+  primary: '#1F5A45',
+  primaryPressed: '#174735',
+  primarySoft: '#EAF3EF',
+  text: '#171A18',
+  muted: '#69716D',
+  subtle: '#919995',
+  border: '#E4E8E5',
+  borderStrong: '#D5DBD7',
+  success: '#238457',
+  successSoft: '#E8F5EE',
+  warning: '#C97819',
+  warningSoft: '#FFF2DF',
+  danger: '#C53B35',
+  dangerSoft: '#FCEAE8',
+  slate: '#3F4743',
+  ink: '#101311',
 };
 
 export const radii = {
-  sm: 8,
-  md: 12,
-  lg: 18,
+  sm: 6,
+  md: 8,
+  lg: 8,
 };
 
 export const spacing = {
-  xs: 6,
-  sm: 10,
-  md: 14,
-  lg: 20,
-  xl: 28,
+  xs: 4,
+  sm: 8,
+  md: 12,
+  lg: 18,
+  xl: 24,
+};
+
+export const typography = {
+  pageTitle: { fontSize: 27, lineHeight: 34, fontWeight: '800' as const },
+  sectionTitle: { fontSize: 17, lineHeight: 23, fontWeight: '800' as const },
+  body: { fontSize: 14, lineHeight: 20, fontWeight: '400' as const },
+  label: { fontSize: 12, lineHeight: 16, fontWeight: '700' as const },
+  metric: { fontSize: 20, lineHeight: 26, fontWeight: '800' as const },
 };
 
 export const shadow = Platform.select({
   ios: {
-    shadowColor: '#0B1F3A',
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 5 },
+    shadowColor: '#17201B',
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 3 },
   },
   android: {
-    elevation: 2,
+    elevation: 1,
   },
   default: {},
 });

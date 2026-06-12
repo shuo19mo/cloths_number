@@ -1,85 +1,42 @@
+import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useNavigation, useRoute } from '@react-navigation/native';
 import { useCallback, useState } from 'react';
-import { Alert, ScrollView, Text, View } from 'react-native';
-import { Card } from '../components/Card';
-import { Field, PrimaryButton } from '../components/Form';
+import { Alert, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { BottomActionBar, BottomSubmit } from '../components/BottomActionBar';
+import { Field } from '../components/Form';
 import { ProductPicker } from '../components/ProductPicker';
+import { QuantityStepper } from '../components/QuantityStepper';
 import { getProducts, getSkus } from '../services/queries';
 import { createSaleOrder } from '../services/inventory';
 import { useApp } from '../state/AppContext';
 import type { Product, Sku } from '../models';
-import { colors } from '../theme';
+import { colors, radii, spacing } from '../theme';
 import { screenStyles } from './shared';
 
 export function SaleScreen() {
-  const route = useRoute<any>();
-  const navigation = useNavigation<any>();
-  const { currentUser, refresh } = useApp();
-  const [products, setProducts] = useState<Product[]>([]);
-  const [product, setProduct] = useState<Product | null>(null);
-  const [skus, setSkus] = useState<Sku[]>([]);
-  const [quantities, setQuantities] = useState<Record<number, string>>({});
-  const [prices, setPrices] = useState<Record<number, string>>({});
-  const [discount, setDiscount] = useState('0');
-  const [received, setReceived] = useState('');
-  const [note, setNote] = useState('销售出库');
+  const route = useRoute<any>(); const navigation = useNavigation<any>(); const { currentUser, refresh } = useApp();
+  const [products, setProducts] = useState<Product[]>([]); const [product, setProduct] = useState<Product | null>(null); const [skus, setSkus] = useState<Sku[]>([]);
+  const [quantities, setQuantities] = useState<Record<number, string>>({}); const [prices, setPrices] = useState<Record<number, string>>({});
+  const [discount, setDiscount] = useState('0'); const [received, setReceived] = useState(''); const [note, setNote] = useState('销售出库');
+  const selectProduct = useCallback((next: Product) => { const rows = getSkus(next.id); setProduct(next); setSkus(rows); setQuantities(Object.fromEntries(rows.map((sku) => [sku.id, '0']))); setPrices(Object.fromEntries(rows.map((sku) => [sku.id, String(next.defaultPrice)]))); setReceived(''); setDiscount('0'); }, []);
+  useFocusEffect(useCallback(() => { const rows = getProducts(); setProducts(rows); const selected = rows.find((item) => item.id === route.params?.productId) ?? rows[0]; if (selected) selectProduct(selected); }, [route.params?.productId, selectProduct]));
+  const gross = skus.reduce((sum, sku) => sum + (Number(quantities[sku.id]) || 0) * (Number(prices[sku.id]) || 0), 0); const suggestedReceived = Math.max(0, gross - (Number(discount) || 0));
+  const selectedCount = skus.filter((sku) => Number(quantities[sku.id]) > 0).length;
+  const submit = () => { if (!currentUser || !product) return; try { const orderNo = createSaleOrder({ productId: product.id, items: skus.map((sku) => ({ skuId: sku.id, quantity: Number(quantities[sku.id]) || 0, unitPrice: Number(prices[sku.id]) || 0 })), discount: Number(discount) || 0, receivedAmount: received ? Number(received) : suggestedReceived, note }, currentUser); refresh(); Alert.alert('销售完成', `单据 ${orderNo} 已保存`, [{ text: '查看商品', onPress: () => navigation.replace('ProductDetail', { productId: product.id }) }]); } catch (error) { Alert.alert('无法提交', error instanceof Error ? error.message : '请检查销售明细'); } };
 
-  const selectProduct = useCallback((next: Product) => {
-    const rows = getSkus(next.id);
-    setProduct(next); setSkus(rows);
-    setQuantities(Object.fromEntries(rows.map((sku) => [sku.id, '0'])));
-    setPrices(Object.fromEntries(rows.map((sku) => [sku.id, String(next.defaultPrice)])));
-    setReceived(''); setDiscount('0');
-  }, []);
-  useFocusEffect(useCallback(() => {
-    const rows = getProducts(); setProducts(rows);
-    const selected = rows.find((item) => item.id === route.params?.productId) ?? rows[0];
-    if (selected) selectProduct(selected);
-  }, [route.params?.productId, selectProduct]));
-
-  const gross = skus.reduce((sum, sku) => sum + (Number(quantities[sku.id]) || 0) * (Number(prices[sku.id]) || 0), 0);
-  const suggestedReceived = Math.max(0, gross - (Number(discount) || 0));
-  const submit = () => {
-    if (!currentUser || !product) return;
-    try {
-      const orderNo = createSaleOrder({
-        productId: product.id,
-        items: skus.map((sku) => ({ skuId: sku.id, quantity: Number(quantities[sku.id]) || 0, unitPrice: Number(prices[sku.id]) || 0 })),
-        discount: Number(discount) || 0, receivedAmount: received ? Number(received) : suggestedReceived, note,
-      }, currentUser);
-      refresh();
-      Alert.alert('销售完成', `单据 ${orderNo} 已保存`, [{ text: '查看商品', onPress: () => navigation.replace('ProductDetail', { productId: product.id }) }]);
-    } catch (error) {
-      Alert.alert('无法提交', error instanceof Error ? error.message : '请检查销售明细');
-    }
-  };
-
-  return (
-    <ScrollView style={screenStyles.screen} contentContainerStyle={screenStyles.content}>
-      <Text style={screenStyles.title}>销售出库</Text>
-      <Text style={screenStyles.sectionTitle}>1. 选择商品</Text>
-      <ProductPicker products={products} selectedId={product?.id ?? null} onSelect={selectProduct} />
-      <Text style={screenStyles.sectionTitle}>2. 填写销售明细</Text>
-      {skus.map((sku) => (
-        <Card key={sku.id}>
-          <View style={screenStyles.row}>
-            <Text style={{ color: colors.text, fontWeight: '900' }}>{sku.color} / {sku.size}</Text>
-            <Text style={{ color: sku.quantity === 0 ? colors.danger : colors.muted }}>可售 {sku.quantity} 件</Text>
-          </View>
-          <View style={{ flexDirection: 'row', gap: 10 }}>
-            <View style={{ flex: 1 }}><Field label="销售数量" keyboardType="number-pad" value={quantities[sku.id] ?? '0'} onChangeText={(text) => setQuantities((old) => ({ ...old, [sku.id]: text }))} /></View>
-            <View style={{ flex: 1 }}><Field label="单件售价" keyboardType="decimal-pad" value={prices[sku.id] ?? ''} onChangeText={(text) => setPrices((old) => ({ ...old, [sku.id]: text }))} /></View>
-          </View>
-        </Card>
-      ))}
-      <Card>
-        <Text style={screenStyles.sectionTitle}>3. 收款信息</Text>
-        <Field label="整单优惠" keyboardType="decimal-pad" value={discount} onChangeText={setDiscount} />
-        <Field label={`实收金额（建议 ¥${suggestedReceived.toFixed(2)}）`} keyboardType="decimal-pad" value={received} onChangeText={setReceived} placeholder={suggestedReceived.toFixed(2)} />
-        <Field label="备注" value={note} onChangeText={setNote} />
-        <Text style={{ color: colors.primary, fontWeight: '900', marginTop: 14 }}>商品金额 ¥{gross.toFixed(2)} · 应收 ¥{suggestedReceived.toFixed(2)}</Text>
-        <PrimaryButton title="提交整张销售单" onPress={submit} />
-      </Card>
-    </ScrollView>
-  );
+  return <KeyboardAvoidingView style={styles.root} behavior={Platform.OS === 'ios' ? 'padding' : undefined}><ScrollView style={screenStyles.screen} contentContainerStyle={[screenStyles.content, { paddingBottom: 110 }]} keyboardShouldPersistTaps="handled">
+    <StepHeader step="01" title="选择商品" subtitle="搜索并选择本次销售的商品" /><ProductPicker products={products} selectedId={product?.id ?? null} onSelect={selectProduct} />
+    <StepHeader step="02" title="填写销售明细" subtitle="库存不足的尺码不能提交销售" /><View style={styles.skuList}>{skus.map((sku) => <SaleSkuRow key={sku.id} sku={sku} quantity={quantities[sku.id] ?? '0'} price={prices[sku.id] ?? ''} onQuantity={(value) => setQuantities((old) => ({ ...old, [sku.id]: value }))} onPrice={(value) => setPrices((old) => ({ ...old, [sku.id]: value }))} />)}</View>
+    <StepHeader step="03" title="收款信息" subtitle="确认优惠和实际收款金额" /><View style={styles.formSection}><View style={styles.summary}><Summary label="商品金额" value={`¥${gross.toFixed(2)}`} /><Summary label="应收金额" value={`¥${suggestedReceived.toFixed(2)}`} primary /></View><View style={styles.twoColumns}><View style={{ flex: 1 }}><Field label="整单优惠" keyboardType="decimal-pad" value={discount} onChangeText={setDiscount} /></View><View style={{ flex: 1 }}><Field label="实收金额" keyboardType="decimal-pad" value={received} onChangeText={setReceived} placeholder={suggestedReceived.toFixed(2)} /></View></View><Field label="备注" value={note} onChangeText={setNote} /></View>
+  </ScrollView><BottomActionBar><BottomSubmit label="提交销售单" summary={`${selectedCount} 个 SKU · ¥${(received ? Number(received) : suggestedReceived).toFixed(2)}`} icon="bag-handle-outline" onPress={submit} /></BottomActionBar></KeyboardAvoidingView>;
 }
+
+function StepHeader({ step, title, subtitle }: { step: string; title: string; subtitle: string }) { return <View style={styles.stepHeader}><Text style={styles.step}>{step}</Text><View><Text style={styles.stepTitle}>{title}</Text><Text style={styles.stepSubtitle}>{subtitle}</Text></View></View>; }
+function SaleSkuRow({ sku, quantity, price, onQuantity, onPrice }: { sku: Sku; quantity: string; price: string; onQuantity: (value: string) => void; onPrice: (value: string) => void }) { const active = Number(quantity) > 0; const insufficient = Number(quantity) > sku.quantity; return <View style={[styles.skuRow, active && styles.skuActive, insufficient && styles.skuError]}><View style={styles.skuTop}><View><Text style={styles.skuName}>{sku.color} / {sku.size}</Text><Text style={[styles.skuStock, sku.quantity === 0 && { color: colors.danger }]}>可售库存 {sku.quantity} 件</Text></View>{insufficient ? <Text style={styles.errorText}>库存不足</Text> : active ? <Ionicons name="checkmark-circle" size={20} color={colors.primary} /> : null}</View><View style={styles.skuControls}><View><Text style={styles.controlLabel}>销售数量</Text><QuantityStepper value={quantity} onChange={onQuantity} max={sku.quantity} /></View><View style={{ flex: 1 }}><Text style={styles.controlLabel}>单件售价</Text><View style={styles.moneyInput}><Text style={styles.currency}>¥</Text><TextInput value={price} onChangeText={onPrice} keyboardType="decimal-pad" style={styles.priceInput} /></View></View></View></View>; }
+function Summary({ label, value, primary }: { label: string; value: string; primary?: boolean }) { return <View><Text style={styles.summaryLabel}>{label}</Text><Text style={[styles.summaryValue, primary && { color: colors.primary }]}>{value}</Text></View>; }
+
+const styles = StyleSheet.create({
+  root: { flex: 1, backgroundColor: colors.background }, stepHeader: { flexDirection: 'row', alignItems: 'center', gap: 11, marginBottom: 12, marginTop: 3 }, step: { width: 34, color: colors.primary, fontSize: 13, fontWeight: '800' }, stepTitle: { color: colors.text, fontSize: 18, fontWeight: '800' }, stepSubtitle: { color: colors.muted, fontSize: 12, marginTop: 2 },
+  skuList: { borderRadius: radii.lg, borderWidth: 1, borderColor: colors.border, overflow: 'hidden', marginBottom: spacing.xl }, skuRow: { backgroundColor: colors.card, padding: spacing.md, borderBottomWidth: 1, borderBottomColor: colors.border }, skuActive: { backgroundColor: '#FBFDFC', borderLeftWidth: 3, borderLeftColor: colors.primary }, skuError: { borderLeftColor: colors.danger, backgroundColor: colors.dangerSoft }, skuTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }, skuName: { color: colors.text, fontWeight: '800', fontSize: 14 }, skuStock: { color: colors.muted, fontSize: 11, marginTop: 3 }, errorText: { color: colors.danger, fontSize: 11, fontWeight: '800' }, skuControls: { flexDirection: 'row', alignItems: 'flex-end', gap: 12, marginTop: 11 }, controlLabel: { color: colors.muted, fontSize: 11, fontWeight: '700', marginBottom: 5 }, moneyInput: { height: 42, borderRadius: radii.sm, borderWidth: 1, borderColor: colors.borderStrong, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 10 }, currency: { color: colors.muted, fontWeight: '700' }, priceInput: { flex: 1, color: colors.text, fontWeight: '800', paddingHorizontal: 5, paddingVertical: 0 },
+  formSection: { backgroundColor: colors.card, borderRadius: radii.lg, borderWidth: 1, borderColor: colors.border, padding: spacing.lg }, summary: { minHeight: 74, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-around', borderRadius: radii.sm, backgroundColor: colors.background }, summaryLabel: { color: colors.muted, fontSize: 11 }, summaryValue: { color: colors.text, fontSize: 20, fontWeight: '800', marginTop: 4 }, twoColumns: { flexDirection: 'row', gap: 10 },
+});

@@ -1,5 +1,5 @@
 import { StyleSheet } from 'react-native';
-import { colors, spacing } from '../theme';
+import { colors, spacing, typography } from '../theme';
 
 export const screenStyles = StyleSheet.create({
   screen: {
@@ -7,21 +7,20 @@ export const screenStyles = StyleSheet.create({
     backgroundColor: colors.background,
   },
   content: {
-    padding: spacing.md,
-    paddingBottom: 32,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.md,
+    paddingBottom: 96,
   },
   title: {
     color: colors.text,
-    fontSize: 26,
-    fontWeight: '900',
-    marginBottom: spacing.md,
+    ...typography.pageTitle,
+    marginBottom: spacing.lg,
   },
   sectionTitle: {
     color: colors.text,
-    fontSize: 18,
-    fontWeight: '800',
-    marginTop: spacing.sm,
-    marginBottom: spacing.sm,
+    ...typography.sectionTitle,
+    marginTop: spacing.md,
+    marginBottom: spacing.md,
   },
   muted: {
     color: colors.muted,
