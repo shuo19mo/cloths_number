@@ -72,7 +72,8 @@ export function ProductDetailScreen() {
       </Card>
       <Card>
         <Text style={screenStyles.sectionTitle}>进价历史</Text>
-        <Text style={screenStyles.muted}>当前默认进价 {money(product.defaultCost)} · 最近一次 {money(latestCost)} · 平均 {money(avgCost)}</Text>
+        <Text style={screenStyles.muted}>默认进价 {money(product.defaultCost)} · 最近一次 {money(product.lastPurchaseCost || latestCost)} · 加权平均 {money(product.averageCost || avgCost)}</Text>
+        <Text style={[screenStyles.muted, { marginTop: 6 }]}>品牌：{product.brand || '未填写'} · 供应商：{product.supplier || '未填写'}</Text>
       </Card>
       <Card>
         <Text style={screenStyles.sectionTitle}>库存流水</Text>
@@ -90,8 +91,9 @@ export function ProductDetailScreen() {
         ))}
       </Card>
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
-        <TouchableOpacity onPress={() => navigation.navigate('Purchase')} style={actionStyle}><Text style={actionText}>进货</Text></TouchableOpacity>
-        <TouchableOpacity onPress={() => navigation.navigate('Sale')} style={actionStyle}><Text style={actionText}>销售</Text></TouchableOpacity>
+        <TouchableOpacity onPress={() => navigation.navigate('Purchase', { productId })} style={actionStyle}><Text style={actionText}>进货</Text></TouchableOpacity>
+        <TouchableOpacity onPress={() => navigation.navigate('Sale', { productId })} style={actionStyle}><Text style={actionText}>销售</Text></TouchableOpacity>
+        <TouchableOpacity onPress={() => navigation.navigate('Stocktake', { productId })} style={actionStyle}><Text style={actionText}>盘点</Text></TouchableOpacity>
         <TouchableOpacity onPress={() => navigation.navigate('Adjust', { skuId: skus[0]?.id })} style={actionStyle}><Text style={actionText}>调整库存</Text></TouchableOpacity>
       </View>
     </ScrollView>
